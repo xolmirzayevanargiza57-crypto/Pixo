@@ -35,12 +35,18 @@ def gemini_chat(user_id, user_text):
     })
     payload = {
         "system_instruction": {
-            "parts": [{"text": "Sen Mira — aqlli, do'stona va ko'p tilli AI yordamchisisan. Foydalanuvchi qaysi tilda yozsa, o'sha tilda javob ber."}]
+            "parts": [{"text": "Sen Pixo — aqlli, do'stona va ko'p tilli AI yordamchisisan. Foydalanuvchi qaysi tilda yozsa, o'sha tilda javob ber."}]
         },
         "contents": user_histories[user_id]
     }
-    resp = requests.post(GEMINI_CHAT_URL, json=payload)
+    resp = requests.post(GEMINI_CHAT_URL, json=payload, timeout=30)
     data = resp.json()
+    logger.info(f"Gemini javob: {data}")
+    
+    if "candidates" not in data:
+        error_msg = data.get("error", {}).get("message", "Noma'lum xato")
+        raise Exception(f"Gemini xatosi: {error_msg}")
+    
     reply = data["candidates"][0]["content"]["parts"][0]["text"]
     user_histories[user_id].append({
         "role": "model",
@@ -53,8 +59,13 @@ def gemini_image(prompt):
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]}
     }
-    resp = requests.post(GEMINI_IMAGE_URL, json=payload)
+    resp = requests.post(GEMINI_IMAGE_URL, json=payload, timeout=60)
     data = resp.json()
+    logger.info(f"Gemini image javob: {data}")
+    
+    if "candidates" not in data:
+        return None
+    
     for part in data["candidates"][0]["content"]["parts"]:
         if "inlineData" in part:
             return base64.b64decode(part["inlineData"]["data"])
@@ -62,7 +73,7 @@ def gemini_image(prompt):
 
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "👋 Salom! Men Pixo— AI yordamchisiman!\n\n"
+        "👋 Salom! Men Pixo — AI yordamchisiman!\n\n"
         "💬 Savolingizni yozing\n"
         "🖼 Rasm: /rasm <tavsif>\n"
         "🔄 Tozalash: /yangi"
@@ -82,8 +93,8 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text(reply)
     except Exception as e:
-        logger.error(e)
-        await update.message.reply_text("⚠️ Xatolik. /yangi ni ishlating.")
+        logger.error(f"Chat xatosi: {e}")
+        await update.message.reply_text(f"⚠️ Xatolik: {str(e)[:200]}")
 
 async def generate_image(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not ctx.args:
@@ -99,8 +110,8 @@ async def generate_image(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         else:
             await msg.edit_text("❌ Rasm yaratib bo'lmadi.")
     except Exception as e:
-        logger.error(e)
-        await msg.edit_text("⚠️ Xatolik yuz berdi.")
+        logger.error(f"Rasm xatosi: {e}")
+        await msg.edit_text(f"⚠️ Xatolik: {str(e)[:200]}")
 
 flask_app = Flask(__name__)
 
@@ -115,13 +126,14 @@ def main():
     t = threading.Thread(target=run_flask)
     t.daemon = True
     t.start()
+    
     app = Application.builder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("yangi", new_chat))
     app.add_handler(CommandHandler("rasm", generate_image))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    logger.info("Mira Bot ishga tushdi!")
-    app.run_polling()
+    logger.info("Pixo Bot ishga tushdi!")
+    app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
