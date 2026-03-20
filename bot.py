@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 TELEGRAM_TOKEN = "8652624419:AAGr0bjfswnUaf0lxtSV-o2atb2188qOLwM"
-GEMINI_API_KEY = "AIzaSyCtYMidjmrqCh_DAXy-xSnoxX23EfmUXxM"
+GEMINI_API_KEY = "AIzaSyBGpW2g4XRB2Q8TZd280ke6mWyOJvcZi0k"
 
 GEMINI_CHAT_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
 GEMINI_IMAGE_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key={GEMINI_API_KEY}"
