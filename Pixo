@@ -1,0 +1,29 @@
+import threading
+from flask import Flask
+
+flask_app = Flask(__name__)
+
+@flask_app.route("/")
+def home():
+    return "Pixo Bot ishlayapti! ✅"
+
+def run_flask():
+    flask_app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+def main():
+    # Flask ni alohida threadda ishga tushir
+    t = threading.Thread(target=run_flask)
+    t.daemon = True
+    t.start()
+
+    # Telegram botni ishga tushir
+    app = Application.builder().token(8652624419:AAGr0bjfswnUaf0lxtSV-o2atb2188qOLwM).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("yangi", new_chat))
+    app.add_handler(CommandHandler("rasm", generate_image))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    logger.info("Pixo Bot ishga tushdi!")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
